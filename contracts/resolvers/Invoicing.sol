@@ -2,20 +2,20 @@
 
 pragma solidity 0.5.0;
 
-import "../SnowflakeResolver.sol";
+import "../PhoenixIdentityResolver.sol";
 import "../interfaces/IdentityRegistryInterface.sol";
 import "../interfaces/PhoenixInterface.sol";
-import "../interfaces/SnowflakeInterface.sol";
+import "../interfaces/PhoenixIdentityInterface.sol";
 import "../zeppelin/math/SafeMath.sol";
 
 
 /**
  * @title Invoicing
- * @notice Create invoices through Snowflake
+ * @notice Create invoices through PhoenixIdentity
  * @dev This contract is the base of the dapp
  * @author clemlak
  */
-contract Invoicing is SnowflakeResolver {
+contract Invoicing is PhoenixIdentityResolver {
     /* Invoices can have several status, but only one at a time */
     enum Status { Draft, Unpaid, PartiallyPaid, Paid, PartiallyRefunded, Refunded, Canceled, Disputed }
 
@@ -86,12 +86,12 @@ contract Invoicing is SnowflakeResolver {
      */
     event LogDisputeCreated(uint256 invoiceId, uint256 customer, string details);
 
-    constructor (address snowflakeAddress) public
-        SnowflakeResolver("Invoicing", "Create invoices", snowflakeAddress, false, false) {}
+    constructor (address phoenixIdentityAddress) public
+        PhoenixIdentityResolver("Invoicing", "Create invoices", phoenixIdentityAddress, false, false) {}
 
-    function onAddition(uint ein, uint, bytes memory) public senderIsSnowflake() returns (bool) {}
+    function onAddition(uint ein, uint, bytes memory) public senderIsPhoenixIdentity() returns (bool) {}
 
-    function onRemoval(uint, bytes memory) public senderIsSnowflake() returns (bool) {}
+    function onRemoval(uint, bytes memory) public senderIsPhoenixIdentity() returns (bool) {}
 
     /**
      * @dev Creates a new draft invoice
@@ -112,8 +112,8 @@ contract Invoicing is SnowflakeResolver {
         Terms paymentTerm,
         uint256 term
     ) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -151,8 +151,8 @@ contract Invoicing is SnowflakeResolver {
         uint256 invoiceId,
         uint256[] memory customers
     ) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -191,8 +191,8 @@ contract Invoicing is SnowflakeResolver {
         string memory additionalTerms,
         string memory note
     ) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(PhoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -221,8 +221,8 @@ contract Invoicing is SnowflakeResolver {
      * @param invoiceId The id of the invoice (given by the smart-contract)
      */
     function validateInvoice(uint256 invoiceId) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -255,8 +255,8 @@ contract Invoicing is SnowflakeResolver {
      * @param amount The amount used to pay
      */
     function payInvoice(uint256 invoiceId, uint256 amount) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -303,7 +303,7 @@ contract Invoicing is SnowflakeResolver {
 
         emit LogPayment(invoiceId, ein, amount);
 
-        snowflake.transferSnowflakeBalanceFrom(ein, invoices[invoiceId].merchant, amount);
+        phoenixIdentity.transferPhoenixIdentityBalanceFrom(ein, invoices[invoiceId].merchant, amount);
     }
 
     /**
@@ -313,8 +313,8 @@ contract Invoicing is SnowflakeResolver {
      * @param amount The amount to refund
      */
     function refundCustomer(uint256 invoiceId, uint256 customer, uint256 amount) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -350,7 +350,7 @@ contract Invoicing is SnowflakeResolver {
 
         emit LogRefund(invoiceId, customer, amount);
 
-        snowflake.transferSnowflakeBalanceFrom(ein, customer, amount);
+        phoenixIdentity.transferPhoenixIdentityBalanceFrom(ein, customer, amount);
     }
 
     /**
@@ -358,8 +358,8 @@ contract Invoicing is SnowflakeResolver {
      * @param invoiceId The id of the invoice (given by the smart-contract)
      */
     function cancelInvoice(uint256 invoiceId) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -378,8 +378,8 @@ contract Invoicing is SnowflakeResolver {
      * @param details The details of the dispute
      */
     function openDispute(uint256 invoiceId, string memory details) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");
@@ -406,8 +406,8 @@ contract Invoicing is SnowflakeResolver {
      * @param invoiceId The id of the invoice (given by the smart-contract)
      */
     function closeDispute(uint256 invoiceId) public {
-        SnowflakeInterface snowflake = SnowflakeInterface(snowflakeAddress);
-        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(snowflake.identityRegistryAddress());
+        PhoenixIdentityInterface phoenixIdentity = PhoenixIdentityInterface(phoenixIdentityAddress);
+        IdentityRegistryInterface identityRegistry = IdentityRegistryInterface(phoenixIdentity.identityRegistryAddress());
 
         uint256 ein = identityRegistry.getEIN(msg.sender);
         require(identityRegistry.isResolverFor(ein, address(this)), "The EIN has not set this resolver.");

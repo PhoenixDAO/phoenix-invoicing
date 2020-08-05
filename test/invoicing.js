@@ -67,14 +67,14 @@ contract('Testing Invoicing', function (accounts) {
       'I authorize the creation of an Identity on my behalf.',
       merchant.recoveryAddress,
       merchant.address,
-      { t: 'address[]', v: [instances.Snowflake.address] },
+      { t: 'address[]', v: [instances.PhoenixIdentity.address] },
       { t: 'address[]', v: [] },
       timestamp
     )
 
     const permission = await sign(permissionString, merchant.address, merchant.private)
 
-    await instances.Snowflake.createIdentityDelegated(
+    await instances.PhoenixIdentity.createIdentityDelegated(
       merchant.recoveryAddress, merchant.address, [], merchant.phoenixID, permission.v, permission.r, permission.s, timestamp
     )
 
@@ -83,20 +83,20 @@ contract('Testing Invoicing', function (accounts) {
     await verifyIdentity(merchant.identity, instances.IdentityRegistry, {
       recoveryAddress:     merchant.recoveryAddress,
       associatedAddresses: [merchant.address],
-      providers:           [instances.Snowflake.address],
-      resolvers:           [instances.ClientRaindrop.address]
+      providers:           [instances.PhoenixIdentity.address],
+      resolvers:           [instances.ClientPhoenixAuthentication.address]
     })
   })
 
   it('can deposit PHNX (merchant)', async () => {
     const depositAmount = web3.utils.toBN(1e18).mul(web3.utils.toBN(1000))
     await instances.PhoenixToken.approveAndCall(
-      instances.Snowflake.address, depositAmount, web3.eth.abi.encodeParameter('uint256', merchant.identity.toString()),
+      instances.PhoenixIdentity.address, depositAmount, web3.eth.abi.encodeParameter('uint256', merchant.identity.toString()),
       { from: accounts[0] }
     )
 
-    const snowflakeBalance = await instances.Snowflake.deposits(merchant.identity)
-    assert.isTrue(snowflakeBalance.eq(depositAmount), 'Incorrect balance')
+    const phoenixIdentityBalance = await instances.PhoenixIdentity.deposits(merchant.identity)
+    assert.isTrue(phoenixIdentityBalance.eq(depositAmount), 'Incorrect balance')
   })
 
   it('Identity can be created (customer)', async function () {
@@ -107,14 +107,14 @@ contract('Testing Invoicing', function (accounts) {
       'I authorize the creation of an Identity on my behalf.',
       customer.recoveryAddress,
       customer.address,
-      { t: 'address[]', v: [instances.Snowflake.address] },
+      { t: 'address[]', v: [instances.PhoenixIdentity.address] },
       { t: 'address[]', v: [] },
       timestamp
     )
 
     const permission = await sign(permissionString, customer.address, customer.private)
 
-    await instances.Snowflake.createIdentityDelegated(
+    await instances.PhoenixIdentity.createIdentityDelegated(
       customer.recoveryAddress, customer.address, [], customer.phoenixID, permission.v, permission.r, permission.s, timestamp
     )
 
@@ -123,31 +123,31 @@ contract('Testing Invoicing', function (accounts) {
     await verifyIdentity(customer.identity, instances.IdentityRegistry, {
       recoveryAddress:     customer.recoveryAddress,
       associatedAddresses: [customer.address],
-      providers:           [instances.Snowflake.address],
-      resolvers:           [instances.ClientRaindrop.address]
+      providers:           [instances.PhoenixIdentity.address],
+      resolvers:           [instances.ClientPhoenixAuthentication.address]
     })
   })
 
   it('can deposit PHNX (customer)', async () => {
     const depositAmount = web3.utils.toBN(1e18).mul(web3.utils.toBN(1000))
     await instances.PhoenixToken.approveAndCall(
-      instances.Snowflake.address, depositAmount, web3.eth.abi.encodeParameter('uint256', customer.identity.toString()),
+      instances.PhoenixIdentity.address, depositAmount, web3.eth.abi.encodeParameter('uint256', customer.identity.toString()),
       { from: accounts[0] }
     )
 
-    const snowflakeBalance = await instances.Snowflake.deposits(customer.identity)
-    assert.isTrue(snowflakeBalance.eq(depositAmount), 'Incorrect balance')
+    const phoenixIdentityBalance = await instances.PhoenixIdentity.deposits(customer.identity)
+    assert.isTrue(phoenixIdentityBalance.eq(depositAmount), 'Incorrect balance')
   })
 
   describe('Checking Resolver Functionality', async () => {
     it('deploy Invoicing', async () => {
-      instances.Invoicing = await Invoicing.new(instances.Snowflake.address)
+      instances.Invoicing = await Invoicing.new(instances.PhoenixIdentity.address)
     });
 
     it('Should add Invoicing as a new resolver', async () => {
       const allowance = web3.utils.toWei('1000');
 
-      await instances.Snowflake.addResolver(
+      await instances.PhoenixIdentity.addResolver(
         instances.Invoicing.address, true, allowance, '0x00', {
           from: merchant.address,
         },
@@ -157,7 +157,7 @@ contract('Testing Invoicing', function (accounts) {
     it('Should add Invoicing as a new resolver (customer)', async () => {
       const allowance = web3.utils.toWei('1000');
 
-      await instances.Snowflake.addResolver(
+      await instances.PhoenixIdentity.addResolver(
         instances.Invoicing.address, true, allowance, '0x00', {
           from: customer.address,
         },
@@ -174,12 +174,12 @@ contract('Testing Invoicing', function (accounts) {
         customerEin = res;
       }));
 
-    it('Should get the deposit of merchant', () => instances.Snowflake.deposits(merchantEin)
+    it('Should get the deposit of merchant', () => instances.PhoenixIdentity.deposits(merchantEin)
       .then((deposit) => {
         assert.equal(deposit.toString(), web3.utils.toWei('1000'), 'Merchant deposit is wrong');
       }));
 
-    it('Should get the deposit of customer', () => instances.Snowflake.deposits(customerEin)
+    it('Should get the deposit of customer', () => instances.PhoenixIdentity.deposits(customerEin)
       .then((deposit) => {
         assert.equal(deposit.toString(), web3.utils.toWei('1000'), 'Customer deposit is wrong');
       }));
@@ -312,12 +312,12 @@ contract('Testing Invoicing', function (accounts) {
         assert.equal(details.paidAmount.toString(), web3.utils.toWei('1000'), 'Invoice paid amount is wrong');
       }));
 
-    it('Should get the deposit of merchant', () => instances.Snowflake.deposits(merchantEin)
+    it('Should get the deposit of merchant', () => instances.PhoenixIdentity.deposits(merchantEin)
       .then((deposit) => {
         assert.equal(deposit.toString(), web3.utils.toWei('2000'), 'Merchant deposit is wrong');
       }));
 
-    it('Should get the deposit of customer', () => instances.Snowflake.deposits(customerEin)
+    it('Should get the deposit of customer', () => instances.PhoenixIdentity.deposits(customerEin)
       .then((deposit) => {
         assert.equal(deposit.toString(), web3.utils.toWei('0'), 'Merchant deposit is wrong');
       }));

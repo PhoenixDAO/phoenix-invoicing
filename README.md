@@ -1,7 +1,7 @@
-# Snowflake Invoicing
+# PhoenixIdentity Invoicing
 
 ## Introduction
-Snowflake Invoicing allows a business to invoice another business or consumer for a specific amount, on a specified date, and in a certain amount of Phoenix.
+PhoenixIdentity Invoicing allows a business to invoice another business or consumer for a specific amount, on a specified date, and in a certain amount of Phoenix.
 
 
 ## Usage
